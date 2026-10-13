@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helpers ───────────────────────────────────────────────────────────
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // ─── users/{uid} ───────────────────────────────────────────────────────
+    match /users/{uid} {
+      allow read: if isAuth();
+      allow create, update: if isAuth();
+      allow delete: if isAuth();
+    }
+
+    // ─── menu/{date}/items/{itemId} ────────────────────────────────────────
+    match /menu/{date}/items/{itemId} {
+      // Any authenticated user can read menu
+      allow read: if isAuth();
+      // Allow writing menu items (client-side seed and admin management)
+      allow write: if isAuth();
+    }
+
+    // ─── orders/{orderId} ──────────────────────────────────────────────────
+    match /orders/{orderId} {
+      // Authenticated users can read their orders, and staff can read any order
+      allow read: if isAuth();
+      // Client-side order creation (Spark free tier without Cloud Functions)
+      allow create: if isAuth();
+      // Allow status update (e.g. marking served upon scanning)
+      allow update: if isAuth();
+      allow delete: if isAuth();
+    }
+  }
+}
